@@ -1,13 +1,13 @@
-const fs = require('fs');
-const path = require('path');
-const https = require('https');
+const fs = require("fs");
+const path = require("path");
+const https = require("https");
 
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
 
-const { Server } = require('socket.io');
-const { configureWebPush, sendNotification } = require('./push');
+const { Server } = require("socket.io");
+const { configureWebPush, sendNotification } = require("./push");
 
 /**
  * Практика 15–16: HTTPS сервер
@@ -29,27 +29,26 @@ app.use(cors());
 app.use(express.json());
 
 // --- Статика (фронтенд PWA) ---
-const FRONTEND_DIR = path.join(__dirname, '..', '..');
+const FRONTEND_DIR = path.join(__dirname, "..", "..");
 // '..', '..' - поднимаемся на два уровня вверх
 app.use(express.static(FRONTEND_DIR));
 // Если приходит запрос за файлом — ищи этот файл в FRONTEND_DIR и отдай его как есть
 // Сервер показывает ваш index.html, потому что express.static(FRONTEND_DIR) раздаёт корень проекта как “папку сайта”, а вы открываете этот сайт по https://localhost:3443.
 
-//API-шка 
+//API-шка
 
-app.get('/api/health', (req, res) => {
+app.get("/api/health", (req, res) => {
   res.json({ ok: true, ts: new Date().toISOString() });
 });
 
 // --- Push: учебное хранилище подписок (в памяти процесса) ---
 // TODO (студентам): заменить на БД/Redis, если усложняем проект.
 const subscriptions = new Set();
-// В учебном примере храним подписки в памяти процесса 
+// В учебном примере храним подписки в памяти процесса
 // Подписка (PushSubscription) — это “адрес”, куда можно отправлять push именно этому браузеру на этом устройстве.
 
 // Настройка web-push (если ключи есть)
 // Подпись сервера, чтобы push-сервис (Chrome/Firefox push service) доверял запросам сервера.
-
 
 let pushReady = false;
 try {
@@ -60,12 +59,10 @@ try {
   });
   pushReady = true;
 } catch (e) {
-  console.warn('[PUSH] Not configured:', e.message);
+  console.warn("[PUSH] Not configured:", e.message);
 }
 
 // Если ключей нет → pushReady=false → /api/push/test вернёт ошибку push_not_configured.
-
-
 
 /**
  * Практика 16: сохранить push‑подписку
@@ -77,10 +74,10 @@ try {
 // 2.	Сервер кладёт подписку в Set.
 // 3.	Сервер отвечает “ок, я запомнил”.
 
-app.post('/api/push/subscribe', (req, res) => {
+app.post("/api/push/subscribe", (req, res) => {
   const subscription = req.body;
   if (!subscription) {
-    return res.status(400).json({ error: 'subscription_required' });
+    return res.status(400).json({ error: "subscription_required" });
   }
   subscriptions.add(JSON.stringify(subscription));
   res.json({ ok: true, count: subscriptions.size, pushReady });
@@ -94,23 +91,26 @@ app.post('/api/push/subscribe', (req, res) => {
  * - обработать отвалившиеся подписки (410/404)
  */
 
-// Тест Push 
+// Тест Push
 // Как сервер отправляет push (endpoint /api/push/test)
 // 1.	Вы жмёте кнопку / делаете запрос POST /api/push/test.
-// 2.	Сервер берёт все сохранённые подписки. 
+// 2.	Сервер берёт все сохранённые подписки.
 // 3.	Для каждой подписки вызывает sendNotification(...) — это реальная отправка пуша через библиотеку web-push.
 // 4.	Браузер получает push (даже если вкладка закрыта, но браузер запущен).
 
-
-app.post('/api/push/test', async (req, res) => {
+app.post("/api/push/test", async (req, res) => {
   if (!pushReady) {
-    return res.status(400).json({ error: 'push_not_configured', message: 'Set VAPID keys in server/.env' });
+    return res.status(400).json({
+      error: "push_not_configured",
+      message: "Set VAPID keys in server/.env",
+    });
   }
 
+  const { title, body, url } = req.body || {};
   const payload = JSON.stringify({
-    title: 'PWA уведомление',
-    body: 'Тестовое уведомление (Практика 16)',
-    url: '/',
+    title: title || "PWA уведомление",
+    body: body || "Тестовое уведомление (Практика 16)",
+    url: url || "/",
     ts: Date.now(),
   });
 
@@ -122,7 +122,19 @@ app.post('/api/push/test', async (req, res) => {
       sent++;
     } catch (e) {
       // TODO (студентам): при 410 удалять подписку
-      console.warn('[PUSH] send failed:', e.statusCode || '', e.body || e.message);
+      if (e.statusCode === 410 || e.statusCode === 404) {
+        console.warn(
+          "[PUSH] Подписка недействительна (удалена):",
+          e.statusCode,
+        );
+        subscriptions.delete(raw);
+      } else {
+        console.warn(
+          "[PUSH] Ошибка отправки:",
+          e.statusCode || "",
+          e.body || e.message,
+        );
+      }
     }
   }
 
@@ -130,13 +142,15 @@ app.post('/api/push/test', async (req, res) => {
 });
 
 // --- HTTPS server ---
-const CERT_DIR = path.join(__dirname, '..', 'certs');
-const keyPath = path.join(CERT_DIR, 'localhost-key.pem');
-const certPath = path.join(CERT_DIR, 'localhost-cert.pem');
+const CERT_DIR = path.join(__dirname, "..", "certs");
+const keyPath = path.join(CERT_DIR, "localhost-key.pem");
+const certPath = path.join(CERT_DIR, "localhost-cert.pem");
 
 if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
-  console.error('HTTPS certs not found. Create server/certs/localhost-key.pem and server/certs/localhost-cert.pem');
-  console.error('See server/README.md');
+  console.error(
+    "HTTPS certs not found. Create server/certs/localhost-key.pem and server/certs/localhost-cert.pem",
+  );
+  console.error("See server/README.md");
   process.exit(1);
 }
 
@@ -145,28 +159,40 @@ const httpsServer = https.createServer(
     key: fs.readFileSync(keyPath),
     cert: fs.readFileSync(certPath),
   },
-  app
+  app,
 );
 
 // --- Socket.IO (Практика 16) ---
 const io = new Server(httpsServer, {
-  cors: { origin: '*' },
+  cors: { origin: "*" },
 });
 
-io.on('connection', (socket) => {
-  console.log('[WS] connected:', socket.id);
+io.on("connection", (socket) => {
+  console.log("[WS] connected:", socket.id);
 
   // TODO (студентам): придумать события для TODO‑листа
   // Например: 'todo:created', 'todo:toggled', 'todo:deleted'
 
-  socket.on('todo:event', (payload) => {
+  socket.on("todo:event", (payload) => {
     // payload — что угодно (например объект задачи)
     // Рассылаем всем остальным вкладкам/клиентам
-    socket.broadcast.emit('todo:event', payload);
+    socket.broadcast.emit("todo:event", payload);
   });
 
-  socket.on('disconnect', () => {
-    console.log('[WS] disconnected:', socket.id);
+  socket.on("todo:created", (taskData) => {
+    socket.broadcast.emit("todo:created", taskData);
+  });
+
+  socket.on("todo:toggled", (taskId) => {
+    socket.broadcast.emit("todo:toggled", taskId);
+  });
+
+  socket.on("todo:deleted", (taskId) => {
+    socket.broadcast.emit("todo:deleted", taskId);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("[WS] disconnected:", socket.id);
   });
 });
 

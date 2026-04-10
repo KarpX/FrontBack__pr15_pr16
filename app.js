@@ -22,16 +22,20 @@
 // DOM-элементы интерфейса
 // =========================================================
 
-const taskForm = document.getElementById('taskForm');
-const taskInput = document.getElementById('taskInput');
-const taskList = document.getElementById('taskList');
-const taskStats = document.getElementById('taskStats');
-const clearCompletedBtn = document.getElementById('clearCompletedBtn');
-const networkStatus = document.getElementById('networkStatus');
-const installBtn = document.getElementById('installBtn');
-const installHint = document.getElementById('installHint');
-const quoteText = document.getElementById('quoteText');
-const newQuoteBtn = document.getElementById('newQuoteBtn');
+const taskForm = document.getElementById("taskForm");
+const taskInput = document.getElementById("taskInput");
+const taskList = document.getElementById("taskList");
+const taskStats = document.getElementById("taskStats");
+const clearCompletedBtn = document.getElementById("clearCompletedBtn");
+const enableNotificationsBtn = document.getElementById(
+  "enableNotificationsBtn",
+);
+const filterSelect = document.querySelectorAll(".filter");
+const networkStatus = document.getElementById("networkStatus");
+const installBtn = document.getElementById("installBtn");
+const installHint = document.getElementById("installHint");
+const quoteText = document.getElementById("quoteText");
+const newQuoteBtn = document.getElementById("newQuoteBtn");
 
 // =========================================================
 // Константы приложения
@@ -42,21 +46,21 @@ const newQuoteBtn = document.getElementById('newQuoteBtn');
  * Если поменять ключ, приложение начнёт читать и сохранять данные
  * уже в другую запись хранилища.
  */
-const STORAGE_KEY = 'practice_13_14_todos_v2';
+const STORAGE_KEY = "practice_13_14_todos_v2";
 
 /**
  * Массив цитат для нижнего блока.
  * Это небольшой пример клиентской динамики без обращения к серверу.
  */
 const planningQuotes = [
-  'Хороший план сегодня лучше идеального плана завтра.',
-  'Планирование экономит время, которое иначе уходит на исправление хаоса.',
-  'Большая цель достигается через маленькие запланированные шаги.',
-  'Порядок в делах начинается с ясности следующего шага.',
-  'Последовательность важнее разового вдохновения.',
-  'План — это не ограничение, а инструмент управления неопределённостью.',
-  'Когда задача записана, она перестаёт шуметь в голове.',
-  'Хорошая система побеждает временный порыв.'
+  "Хороший план сегодня лучше идеального плана завтра.",
+  "Планирование экономит время, которое иначе уходит на исправление хаоса.",
+  "Большая цель достигается через маленькие запланированные шаги.",
+  "Порядок в делах начинается с ясности следующего шага.",
+  "Последовательность важнее разового вдохновения.",
+  "План — это не ограничение, а инструмент управления неопределённостью.",
+  "Когда задача записана, она перестаёт шуметь в голове.",
+  "Хорошая система побеждает временный порыв.",
 ];
 
 /**
@@ -87,7 +91,7 @@ function loadTasks() {
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed : [];
   } catch (error) {
-    console.error('Не удалось прочитать задачи из localStorage:', error);
+    console.error("Не удалось прочитать задачи из localStorage:", error);
     return [];
   }
 }
@@ -120,9 +124,9 @@ function generateId() {
 function updateNetworkStatus() {
   const isOnline = navigator.onLine;
 
-  networkStatus.textContent = isOnline ? 'Онлайн' : 'Офлайн';
-  networkStatus.classList.toggle('badge--success', isOnline);
-  networkStatus.classList.toggle('badge--offline', !isOnline);
+  networkStatus.textContent = isOnline ? "Онлайн" : "Офлайн";
+  networkStatus.classList.toggle("badge--success", isOnline);
+  networkStatus.classList.toggle("badge--offline", !isOnline);
 }
 
 /**
@@ -139,44 +143,51 @@ function showRandomQuote() {
  * чтобы код был нагляднее и безопаснее для разбора.
  */
 function createTaskElement(task) {
-  const li = document.createElement('li');
-  li.className = 'task-item';
+  const li = document.createElement("li");
+  li.className = "task-item";
   li.dataset.id = task.id;
 
-  const leftPart = document.createElement('div');
-  leftPart.className = 'task-item__left';
+  const leftPart = document.createElement("div");
+  leftPart.className = "task-item__left";
 
-  const checkbox = document.createElement('input');
-  checkbox.type = 'checkbox';
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
   checkbox.checked = task.completed;
-  checkbox.dataset.action = 'toggle';
-  checkbox.setAttribute('aria-label', 'Отметить задачу выполненной');
+  checkbox.dataset.action = "toggle";
+  checkbox.setAttribute("aria-label", "Отметить задачу выполненной");
 
-  const text = document.createElement('span');
-  text.className = 'task-item__text';
+  const text = document.createElement("span");
+  text.className = "task-item__text";
   text.textContent = task.text;
 
   if (task.completed) {
-    text.classList.add('task-item__text--completed');
+    text.classList.add("task-item__text--completed");
   }
 
   leftPart.appendChild(checkbox);
   leftPart.appendChild(text);
 
-  const actions = document.createElement('div');
-  actions.className = 'task-item__actions';
+  const actions = document.createElement("div");
+  actions.className = "task-item__actions";
 
   /**
    * TODO для студентов:
    * Добавить рядом кнопку редактирования и реализовать изменение текста задачи.
    */
 
-  const deleteBtn = document.createElement('button');
-  deleteBtn.type = 'button';
-  deleteBtn.className = 'button button--danger button--small';
-  deleteBtn.textContent = 'Просто удали это!';
-  deleteBtn.dataset.action = 'delete';
+  const editBtn = document.createElement("button");
+  editBtn.type = "button";
+  editBtn.className = "button button--small button--primary";
+  editBtn.textContent = "Просто измени это!";
+  editBtn.dataset.action = "edit";
 
+  const deleteBtn = document.createElement("button");
+  deleteBtn.type = "button";
+  deleteBtn.className = "button button--danger button--small";
+  deleteBtn.textContent = "Просто удали это!";
+  deleteBtn.dataset.action = "delete";
+
+  actions.appendChild(editBtn);
   actions.appendChild(deleteBtn);
 
   li.appendChild(leftPart);
@@ -202,12 +213,12 @@ function updateStats(tasks) {
  */
 function renderTasks() {
   const tasks = loadTasks();
-  taskList.innerHTML = '';
+  taskList.innerHTML = "";
 
   if (tasks.length === 0) {
-    const emptyState = document.createElement('li');
-    emptyState.className = 'empty-state';
-    emptyState.textContent = 'Пока задач нет. Добавьте первую запись.';
+    const emptyState = document.createElement("li");
+    emptyState.className = "empty-state";
+    emptyState.textContent = "Пока задач нет. Добавьте первую запись.";
     taskList.appendChild(emptyState);
     updateStats(tasks);
     return;
@@ -242,12 +253,14 @@ function addTask(text) {
     id: generateId(),
     text: normalizedText,
     completed: false,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   };
 
   tasks.unshift(newTask);
   saveTasks(tasks);
   renderTasks();
+
+  broadcastSync();
 }
 
 /**
@@ -258,7 +271,7 @@ function toggleTask(taskId) {
     if (task.id === taskId) {
       return {
         ...task,
-        completed: !task.completed
+        completed: !task.completed,
       };
     }
 
@@ -267,6 +280,8 @@ function toggleTask(taskId) {
 
   saveTasks(updated);
   renderTasks();
+
+  broadcastSync();
 }
 
 /**
@@ -277,6 +292,8 @@ function deleteTask(taskId) {
   const updated = loadTasks().filter((task) => task.id !== taskId);
   saveTasks(updated);
   renderTasks();
+
+  broadcastSync();
 }
 
 /**
@@ -286,6 +303,59 @@ function clearCompletedTasks() {
   const updated = loadTasks().filter((task) => !task.completed);
   saveTasks(updated);
   renderTasks();
+
+  broadcastSync();
+}
+
+function editTask(taskId) {
+  const editTask = loadTasks().find((task) => task.id == taskId);
+
+  if (!editTask) return;
+
+  const newText = prompt("Просто введи новый текст задачи!", editTask.text);
+  if (newText === null || newText.trim() === "") {
+    return;
+  }
+
+  const updated = loadTasks().map((task) => {
+    if (task.id == taskId) {
+      return {
+        ...task,
+        text: newText,
+      };
+    }
+    return task;
+  });
+
+  saveTasks(updated);
+  renderTasks();
+
+  broadcastSync();
+}
+
+function filterTasks(filter) {
+  const allTasks = loadTasks();
+  let tasksToRender = allTasks;
+
+  if (filter === "active") {
+    tasksToRender = allTasks.filter((t) => !t.completed);
+  } else if (filter === "completed") {
+    tasksToRender = allTasks.filter((t) => t.completed);
+  }
+
+  taskList.innerHTML = "";
+
+  if (tasksToRender.length === 0) {
+    const emptyState = document.createElement("li");
+    emptyState.className = "empty-state";
+    emptyState.textContent = "Задач не найдено.";
+    taskList.appendChild(emptyState);
+  } else {
+    tasksToRender.forEach((task) => {
+      taskList.appendChild(createTaskElement(task));
+    });
+  }
+  updateStats(allTasks);
 }
 
 // =========================================================
@@ -298,7 +368,10 @@ function clearCompletedTasks() {
  * где приложение уже установлено и открыто как отдельное окно.
  */
 function isStandaloneMode() {
-  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true
+  );
 }
 
 /**
@@ -308,7 +381,7 @@ function isStandaloneMode() {
  */
 function updateInstallHint() {
   if (isStandaloneMode()) {
-    installHint.textContent = 'Приложение уже запущено в standalone-режиме.';
+    installHint.textContent = "Приложение уже запущено в standalone-режиме.";
     if (installBtn) {
       installBtn.hidden = true;
     }
@@ -318,9 +391,11 @@ function updateInstallHint() {
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
   if (isSafari) {
-    installHint.textContent = 'Safari: для установки используйте File → Add to Dock.';
+    installHint.textContent =
+      "Safari: для установки используйте File → Add to Dock.";
   } else {
-    installHint.textContent = 'Chrome / Edge: установите приложение через кнопку браузера или кнопку «Установить PWA». ';
+    installHint.textContent =
+      "Chrome / Edge: установите приложение через кнопку браузера или кнопку «Установить PWA». ";
   }
 }
 
@@ -329,7 +404,7 @@ function updateInstallHint() {
  * Здесь мы перехватываем стандартный prompt, сохраняем событие
  * и показываем свою кнопку установки в интерфейсе.
  */
-window.addEventListener('beforeinstallprompt', (event) => {
+window.addEventListener("beforeinstallprompt", (event) => {
   event.preventDefault();
   deferredInstallPrompt = event;
 
@@ -342,14 +417,14 @@ window.addEventListener('beforeinstallprompt', (event) => {
  * Нажатие на кнопку установки.
  */
 if (installBtn) {
-  installBtn.addEventListener('click', async () => {
+  installBtn.addEventListener("click", async () => {
     if (!deferredInstallPrompt) {
       return;
     }
 
     deferredInstallPrompt.prompt();
     const choiceResult = await deferredInstallPrompt.userChoice;
-    console.log('Результат установки PWA:', choiceResult.outcome);
+    console.log("Результат установки PWA:", choiceResult.outcome);
 
     deferredInstallPrompt = null;
     installBtn.hidden = true;
@@ -359,8 +434,8 @@ if (installBtn) {
 /**
  * Если приложение установлено, скрываем кнопку.
  */
-window.addEventListener('appinstalled', () => {
-  console.log('PWA успешно установлено.');
+window.addEventListener("appinstalled", () => {
+  console.log("PWA успешно установлено.");
   deferredInstallPrompt = null;
 
   if (installBtn) {
@@ -378,15 +453,15 @@ window.addEventListener('appinstalled', () => {
  * Регистрируем Service Worker только там, где технология поддерживается.
  */
 function registerServiceWorker() {
-  if (!('serviceWorker' in navigator)) {
-    console.warn('Service Worker не поддерживается в данном браузере.');
+  if (!("serviceWorker" in navigator)) {
+    console.warn("Service Worker не поддерживается в данном браузере.");
     return;
   }
 
-  window.addEventListener('load', async () => {
+  window.addEventListener("load", async () => {
     try {
-      const registration = await navigator.serviceWorker.register('./sw.js');
-      console.log('Service Worker зарегистрирован:', registration.scope);
+      const registration = await navigator.serviceWorker.register("./sw.js");
+      console.log("Service Worker зарегистрирован:", registration.scope);
 
       /**
        * TODO для студентов:
@@ -395,7 +470,7 @@ function registerServiceWorker() {
        * 3. Показать пользователю кнопку "Обновить приложение".
        */
     } catch (error) {
-      console.error('Ошибка регистрации Service Worker:', error);
+      console.error("Ошибка регистрации Service Worker:", error);
     }
   });
 }
@@ -407,7 +482,7 @@ function registerServiceWorker() {
 /**
  * Отправка формы добавления задачи.
  */
-taskForm.addEventListener('submit', (event) => {
+taskForm.addEventListener("submit", (event) => {
   event.preventDefault();
   addTask(taskInput.value);
   taskForm.reset();
@@ -418,9 +493,9 @@ taskForm.addEventListener('submit', (event) => {
  * Делегирование кликов по списку задач.
  * Это удобнее, чем навешивать обработчики на каждую кнопку отдельно.
  */
-taskList.addEventListener('click', (event) => {
+taskList.addEventListener("click", (event) => {
   const target = event.target;
-  const taskItem = target.closest('.task-item');
+  const taskItem = target.closest(".task-item");
 
   if (!taskItem) {
     return;
@@ -429,22 +504,83 @@ taskList.addEventListener('click', (event) => {
   const taskId = taskItem.dataset.id;
   const action = target.dataset.action;
 
-  if (action === 'delete') {
+  if (action === "delete") {
     deleteTask(taskId);
   }
+
+  if (action === "edit") {
+    editTask(taskId);
+  }
 });
+
+async function subscribeToPush() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    alert("Push-уведомления не поддерживаются вашим браузером.");
+    return;
+  }
+
+  try {
+    const permission = await Notification.requestPermission();
+
+    if (permission === "denied") {
+      alert("Вы запретили уведомления. Разрешите их в настройках браузера.");
+      return;
+    }
+
+    if (permission !== "granted") {
+      return;
+    }
+
+    const registration = await navigator.serviceWorker.ready;
+
+    const PUBLIC_VAPID_KEY =
+      "BMjmAhrQ8zxe_2eZ-W1RM7pDcCdYeewUH8-6ArklZasI2wdHNwDMI__luuqI3cLjjP2UVdv9w1HI2mxP4c8LSrQ";
+
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY),
+    });
+
+    const response = await fetch("https://localhost:3443/api/push/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(subscription),
+    });
+
+    if (response.ok) {
+      alert("Вы успешно подписались на уведомления!");
+    } else {
+      alert("Ошибка при сохранении подписки на сервере.");
+    }
+  } catch (error) {
+    console.error("Ошибка подписки на Push:", error);
+    alert("Произошла ошибка при подписке.");
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  if (!base64String || base64String === "ВАШ_VAPID_PUBLIC_KEY") return null;
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
 
 /**
  * Отдельно обрабатываем изменение чекбокса.
  */
-taskList.addEventListener('change', (event) => {
+taskList.addEventListener("change", (event) => {
   const target = event.target;
 
-  if (target.dataset.action !== 'toggle') {
+  if (target.dataset.action !== "toggle") {
     return;
   }
 
-  const taskItem = target.closest('.task-item');
+  const taskItem = target.closest(".task-item");
   if (!taskItem) {
     return;
   }
@@ -452,14 +588,49 @@ taskList.addEventListener('change', (event) => {
   toggleTask(taskItem.dataset.id);
 });
 
-clearCompletedBtn.addEventListener('click', clearCompletedTasks);
-newQuoteBtn.addEventListener('click', showRandomQuote);
-window.addEventListener('online', updateNetworkStatus);
-window.addEventListener('offline', updateNetworkStatus);
+filterSelect.forEach((filter) => {
+  filter.addEventListener("click", (event) => {
+    console.log(event.target.value);
+    filterSelect.forEach((b) => b.classList.remove("button--active"));
+    event.target.classList.add("button--active");
+
+    const selectedFilter = event.target.value;
+    filterTasks(selectedFilter);
+  });
+});
+
+enableNotificationsBtn.addEventListener("click", subscribeToPush);
+clearCompletedBtn.addEventListener("click", clearCompletedTasks);
+newQuoteBtn.addEventListener("click", showRandomQuote);
+window.addEventListener("online", updateNetworkStatus);
+window.addEventListener("offline", updateNetworkStatus);
 
 // =========================================================
 // Инициализация
 // =========================================================
+
+let socket = null;
+
+function initWebSocket() {
+  if (typeof io !== "undefined") {
+    socket = io();
+
+    socket.on("todo:event", (payload) => {
+      if (payload.action === "sync") {
+        saveTasks(payload.tasks);
+        renderTasks();
+      }
+    });
+  } else {
+    console.warn("Socket.IO не подключен в HTML.");
+  }
+}
+
+function broadcastSync() {
+  if (socket) {
+    socket.emit("todo:event", { action: "sync", tasks: loadTasks() });
+  }
+}
 
 function init() {
   updateNetworkStatus();
@@ -467,6 +638,7 @@ function init() {
   showRandomQuote();
   renderTasks();
   registerServiceWorker();
+  initWebSocket();
 }
 
 init();
@@ -475,14 +647,14 @@ init();
 // Практика 15: App Shell — загрузка контента из /content
 // =========================
 
-const contentViewEl = document.getElementById('contentView');
+const contentViewEl = document.getElementById("contentView");
 
 async function loadPage(page) {
   // page: 'home' | 'theory' | 'push'
   const url = `/content/${page}.html`;
 
   try {
-    const res = await fetch(url, { cache: 'no-store' });
+    const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const html = await res.text();
     contentViewEl.innerHTML = html;
@@ -499,15 +671,15 @@ async function loadPage(page) {
 }
 
 // Кнопки навигации (App Shell)
-document.querySelectorAll('button[data-page]').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    const page = btn.getAttribute('data-page');
+document.querySelectorAll("button[data-page]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const page = btn.getAttribute("data-page");
     loadPage(page);
   });
 });
 
 // По умолчанию показываем стартовую страницу
-loadPage('home');
+loadPage("home");
 
 // =========================
 // Практика 16: WebSocket + Push (заготовки)
